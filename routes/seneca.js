@@ -20,4 +20,15 @@ router.get('/math', (req, res) => {
 	res.send('Seneca in Action');
 });
 
+router.get('/maths', (req, res) => {
+	seneca.add({ role: 'math', cmd: 'sum', integer: true }, (msg, respond) => {
+		var sum = Math.floor(msg.left) + Math.floor(msg.right);
+		respond(null, { answer: sum });
+	});
+
+	seneca.act({ role: 'math', cmd: 'sum', left: 1.5, right: 2.5, integer: true }, console.log);
+
+	res.send('Extending Seneca functionality');
+});
+
 module.exports = router;
