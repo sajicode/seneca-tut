@@ -61,4 +61,32 @@ router.get('/specific', (req, res) => {
 	res.send('Seneca Specificity');
 });
 
+router.get('/reuse', (req, res) => {
+	seneca.add('role: math, cmd: sum', (msg, respond) => {
+		let sum = msg.left + msg.right;
+		respond(null, { answer1: sum });
+	});
+
+	seneca.add('role: math,cmd:sum, integer: true', function(msg, respond) {
+		//* reuse role:math, cmd:sum
+		this.act(
+			{
+				role: 'math',
+				cmd: 'sum',
+				left: Math.floor(msg.left),
+				right: Math.floor(msg.right)
+			},
+			respond
+		);
+	});
+
+	//* this matches role:math, cmd:sum
+	seneca.act('role:math, cmd:sum, left: 1.5, right: 2.5', console.log);
+
+	//* this matches role:math, cmd:sum, integer:true
+	seneca.act('role:math, cmd: sum, left: 1.5, right: 2.5, integer: true', console.log);
+
+	res.send('Code Reuse with patterns');
+});
+
 module.exports = router;
