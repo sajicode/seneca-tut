@@ -146,4 +146,22 @@ router.get('/plugins', (req, res) => {
 	//* A seneca plugin is just a set of action patterns
 });
 
+//* seneca loads four built-in by default: basic, transport, web & mem-store.
+//* These provide core functionalities for basic microservices
+router.get('/math-plugin', (req, res) => {
+	function math(options) {
+		this.add('role:math, cmd:sum', (msg, respond) => {
+			respond(null, { answer1: msg.left + msg.right });
+		});
+
+		this.add('role:math,cmd:product', (msg, respond) => {
+			respond(null, { answer2: msg.left * msg.right });
+		});
+	}
+
+	require('seneca')().use(math).act('role:math,cmd:sum,left:1,right:2', console.log);
+
+	res.send('Maths plugin');
+});
+
 module.exports = router;
