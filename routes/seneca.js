@@ -130,4 +130,20 @@ router.get('/enhance', (req, res) => {
 	res.send('Enhanced patterns');
 });
 
+router.get('/plugins', (req, res) => {
+	const minimal_plugin = (options) => {
+		console.log(options);
+	};
+
+	require('seneca')().use(minimal_plugin, { foo: 'bar' });
+
+	//* seneca.use method takes two parameters...
+	//* plugin: plugin definition function or plugin name
+	//* options: options object for the plugin
+	res.send('Plugins activated');
+	//* A seneca instance is just a set of action patterns
+	//* You can organize action patterns using namespacing conventions, such as role:math
+	//* A seneca plugin is just a set of action patterns
+});
+
 module.exports = router;
