@@ -164,4 +164,78 @@ router.get('/math-plugin', (req, res) => {
 	res.send('Maths plugin');
 });
 
+//* with Seneca, you build up your system by defining a set of patterns that correspond to messages.
+//* These patterns can be organized into plugins to make logging & debugging easier.
+//* One or more plugins can then be combined into microservices.
+
+//* Do not call `seneca.act` at all in the plugin function - call `seneca.add` only.
+
+//* To initialize a plugin, you add a special action pattern: `init:<plugin-name>`. This action pattern is called in sequence for each plugin.
+
+//* The init function must call its `respond` callback without errors. If plugin initialization fails, then Seneca exits the Node.js process.
+
+//* All plugins must complete initialization before any actions are executed.
+
+//* <<<<<< Demonstrating Initialization >>>>>>
+router.get('/plugin-init', (req, res) => {
+	const fs = require('fs');
+
+	function math(options) {
+		//* the logging function, built by init
+		var log;
+
+		//* place all the patterns together
+		//* this makes it easier to see them at a glance
+		this.add('role:math,cmd:sum', sum);
+		this.add('role:math,cmd:product', product);
+
+		//* this is the special initialization pattern
+		this.add('init:math', init);
+
+		//* The init function opens/creates a file. This is appropriate since it runs before any action occurs
+		function init(msg, respond) {
+			//* log a custom file
+			fs.open(options.logfile, 'a', function(err, fd) {
+				//* cannot open for writing, so fail
+				//* this error is fatal to Seneca
+				if (err) return respond(err);
+
+				log = make_log(fd);
+				respond();
+			});
+		}
+
+		function sum(msg, respond) {
+			var out = { answer1: msg.left + msg.right };
+			log('sum ' + msg.left + '+' + msg.right + '=' + out.answer1 + '\n');
+			respond(null, out);
+		}
+
+		function product(msg, respond) {
+			var out = { answer2: msg.left * msg.right };
+			log('product ' + msg.left + '*' + msg.right + '=' + out.answer2 + '\n');
+			respond(null, out);
+		}
+
+		function make_log(fd) {
+			//* it is important to note `entry` is the argument passed to `log` in functions `sum` & `product`.
+			//* in essence, we are expecting whatever receives the invocation of `make_log` (in this case, <log>) to pass arguments which will serve as the value of entry.
+			return function(entry) {
+				fs.write(fd, new Date().toISOString() + ' ' + entry, null, 'utf8', function(err) {
+					if (err) return console.log(err);
+
+					//* ensure log entry is flushed
+					fs.fsync(fd, function(err) {
+						if (err) return console.log(err);
+					});
+				});
+			};
+		}
+	}
+
+	require('seneca')().use(math, { logfile: './math.log' }).act('role:math,cmd:product,left:1,right:2', console.log);
+
+	res.send('Maths plugin with initialization');
+});
+
 module.exports = router;
