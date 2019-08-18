@@ -238,4 +238,10 @@ router.get('/plugin-init', (req, res) => {
 	res.send('Maths plugin with initialization');
 });
 
+router.get('/math-mcs', (req, res) => {
+	require('seneca')().use(require('../helpers/math')).act('role:math,cmd:sum,left:1,right:2', console.log);
+
+	res.send('Maths Microservice');
+});
+
 module.exports = router;
